@@ -24,12 +24,14 @@ struct VertexArray::State {
     explicit NormalState(const Vector& aNormal) : normal(aNormal), count(1.0f) {}
   };
   int uvLength = 0;
+  int uv2Length = 0;
   std::vector<Vector> vertices;
   std::vector<NormalState> normals;
   std::vector<Vector> uvs;
   std::vector<Color> colors;
   std::vector<Vector4> joints;
   std::vector<Vector4> jointsWeights;
+  std::vector<Vector> uvs2;
 };
 
 VertexArrayPtr
@@ -118,6 +120,55 @@ VertexArray::GetUV(const int aIndex) const {
     return Vector::Zero();
   }
   return m.uvs[aIndex];
+}
+
+int
+VertexArray::GetUV2Length() const {
+  if ((GetUV2Count() > 0) && (m.uv2Length == 0)) {
+      VRB_WARN("Normal size is not set when normals defined. Defaulting to %d.", DEFAULT_UV_LENGTH);
+      return DEFAULT_UV_LENGTH;
+  }
+  return m.uv2Length;
+}
+
+void
+VertexArray::SetUV2Length(const int aLength) {
+  int length = aLength;
+  if (length > 3) {
+      length = 3;
+      VRB_ERROR("UV2 Length can not be larger than 3. Size requested: %d", aLength);
+  } else if (length < 2) {
+      length = 2;
+      VRB_ERROR("UV2 length can not be smaller than 2. Size requested: %d", aLength);
+  }
+  m.uv2Length = length;
+}
+
+int
+VertexArray::GetUV2Count() const {
+  return m.uvs2.size();
+}
+
+const Vector&
+VertexArray::GetUV2(const int aIndex) const {
+  if (aIndex >= m.uvs2.size()) {
+      return Vector::Zero();
+  }
+  return m.uvs2[aIndex];
+}
+
+void
+VertexArray::SetUV2(const int aIndex, const Vector& aUV) {
+  if (m.uvs2.size() < (aIndex + 1)) {
+      m.uvs2.resize(aIndex + 1);
+  }
+  m.uvs2[aIndex] = aUV;
+}
+
+int
+VertexArray::AppendUV2(const Vector& aUV) {
+  m.uvs2.push_back(aUV);
+  return m.uvs2.size() - 1;
 }
 
 const Color&

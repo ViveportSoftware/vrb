@@ -2,6 +2,22 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+///////////////////////////////////////////////////////////////////////////////
+// Matrix.h
+// =========
+// NxN Matrix Math classes
+//
+// The elements of the matrix are stored as row major order.
+// | 0 1 |    | 0 1 2 |    |  0  1  2  3 |
+// | 2 3 |    | 3 4 5 |    |  4  5  6  7 |
+//            | 6 7 8 |    |  8  9 10 11 |
+//                         | 12 13 14 15 |
+//
+// m[a][b] = m[a+b*4]
+//
+// UPDATED: 2024-10-28
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #ifndef VRB_MATRIX_DOT_H
 #define VRB_MATRIX_DOT_H

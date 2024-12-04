@@ -15,7 +15,7 @@ GLint
 GetAttributeLocation(GLuint aProgram, const char* aName) {
   GLint result = VRB_GL_CHECK(glGetAttribLocation(aProgram, aName));
   if (result < 0) {
-    VRB_ERROR("Failed to glGetAttributLocation for '%s'", aName);
+    VRB_ERROR("Failed to glGetAttributLocation for '%s', aProgram: %d", aName,aProgram);
   }
   return result;
 }

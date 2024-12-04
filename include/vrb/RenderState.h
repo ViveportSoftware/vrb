@@ -44,6 +44,8 @@ public:
   void Disable();
   void SetLightsEnabled(bool aEnabled);
   void SetUVTransform(const vrb::Matrix& aMatrix);
+  bool TryGetUniform(const char* aName , GLint& uniform) const;
+  bool TryGetAttribute(const char *aName, GLint &attribute) const;
 protected:
   struct State;
   RenderState(State& aState, CreationContextPtr& aContext);

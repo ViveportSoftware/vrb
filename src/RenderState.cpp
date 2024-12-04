@@ -86,7 +86,6 @@ struct RenderState::State : public ResourceGL::State {
   std::string customFragmentShader;
   uint16_t jointsCount;
   float *jointMatrices;
-
   State()
       : program(0)
       , updateProgram(true)
@@ -147,24 +146,24 @@ RenderState::State::InitializeProgram() {
   for (int ix = 0; ix < VRB_MAX_LIGHTS; ix++) {
     const std::string structName = structNameOpen + std::to_string(ix) + structNameClose;
     const std::string direction = structName + directionName;
-    const std::string ambient = structName + ambientName;
-    const std::string diffuse = structName + diffuseName;
-    const std::string specular = structName + specularName;
+    const std::string ambient1 = structName + ambientName;
+    const std::string diffuse1 = structName + diffuseName;
+    const std::string specular1 = structName + specularName;
     uLights[ix].direction = program->GetUniformLocation(direction);
-    uLights[ix].ambient = program->GetUniformLocation(ambient);
-    uLights[ix].diffuse = program->GetUniformLocation(diffuse);
-    uLights[ix].specular = program->GetUniformLocation(specular);
+    uLights[ix].ambient = program->GetUniformLocation(ambient1);
+    uLights[ix].diffuse = program->GetUniformLocation(diffuse1);
+    uLights[ix].specular = program->GetUniformLocation(specular1);
   }
   const std::string materialName("u_material.");
   const std::string specularExponentName("specularExponent");
-  const std::string ambient = materialName + ambientName;
-  const std::string diffuse = materialName + diffuseName;
-  const std::string specular = materialName + specularName;
-  const std::string specularExponent = materialName + specularExponentName;
-  uMatterialAmbient = program->GetUniformLocation(ambient);
-  uMatterialDiffuse = program->GetUniformLocation(diffuse);
-  uMatterialSpecular = program->GetUniformLocation(specular);
-  uMatterialSpecularExponent = program->GetUniformLocation(specularExponent);
+  const std::string ambientAttribute = materialName + ambientName;
+  const std::string diffuseAttribute = materialName + diffuseName;
+  const std::string specularAttribute = materialName + specularName;
+  const std::string specularExponentAttribute = materialName + specularExponentName;
+  uMatterialAmbient = program->GetUniformLocation(ambientAttribute);
+  uMatterialDiffuse = program->GetUniformLocation(diffuseAttribute);
+  uMatterialSpecular = program->GetUniformLocation(specularAttribute);
+  uMatterialSpecularExponent = program->GetUniformLocation(specularExponentAttribute);
   if (kEnableTexturing) {
     const std::string texture0("u_texture0");
     uTexture0 = program->GetUniformLocation(texture0);
@@ -175,6 +174,7 @@ RenderState::State::InitializeProgram() {
   if (kEnableTexturing) {
     aUV = program->GetAttributeLocation("a_uv");
   }
+
   if (program->SupportsFeatures(FeatureVertexColor)) {
     aColor = program->GetAttributeLocation("a_color");
   }
@@ -184,6 +184,7 @@ RenderState::State::InitializeProgram() {
     aJointWeight = program->GetAttributeLocation("a_jointWeight");
     uJointMatrices = program->GetUniformLocation("u_jointMatrix");
   }
+
   updateProgram = false;
 }
 
@@ -212,6 +213,31 @@ GLint
 RenderState::AttributeUV() const {
   return m.aUV;
 }
+
+bool
+RenderState::TryGetUniform(const char *aName, GLint &uniform) const {
+  if (!m.program || m.program->GetProgram() == 0) {
+    return false;
+  }
+  GLint tempUniform = m.program->GetUniformLocation(aName);
+  if(tempUniform < 0)
+    return false;
+  uniform = tempUniform;
+  return true;
+}
+
+bool
+RenderState::TryGetAttribute(const char *aName, GLint &attribute) const {
+  if (!m.program || m.program->GetProgram() == 0) {
+    return false;
+  }
+  GLint tempAttribute = m.program->GetAttributeLocation(aName);
+  if(tempAttribute < 0)
+    return false;
+  attribute = tempAttribute;
+  return true;
+}
+
 
 GLint
 RenderState::AttributeColor() const {

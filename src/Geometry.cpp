@@ -7,6 +7,7 @@
 
 #include "vrb/private/GeometryDrawableState.h"
 #include "vrb/private/ResourceGLState.h"
+#include "vrb/private/GeometryState.h"
 
 #include "vrb/Camera.h"
 #include "vrb/Color.h"
@@ -42,16 +43,6 @@ CopyIndices(std::vector<GLushort> &aTarget, const std::vector<int> &aSource) {
 
 namespace vrb {
 
-struct Geometry::State : public GeometryDrawable::State, public ResourceGL::State {
-  VertexArrayPtr vertexArray;
-  std::vector<Face> faces;
-  GLsizei vertexCount = 0;
-  GLsizei triangleCount = 0;
-
-  State() = default;
-  ~State() = default;
-};
-
 GeometryPtr
 Geometry::Create(CreationContextPtr& aContext) {
   return std::make_shared<ConcreteClass<Geometry, Geometry::State> >(aContext);
@@ -78,12 +69,13 @@ Geometry::UpdateBuffers() {
   }
 
   const bool kHasTextureCoords = m.vertexArray->GetUVCount() > 0;
+  const bool kHasTextureCoord2s = m.vertexArray->GetUV2Count() > 0;
   const bool kHasColor = m.vertexArray->GetColorCount() > 0;
-  const bool kHasJoints =
-      m.vertexArray->GetJointIdsCount() > 0 && m.vertexArray->GetJointWeightsCount() > 0;
+  const bool kHasJoints = m.vertexArray->GetJointIdsCount() > 0 && m.vertexArray->GetJointWeightsCount() > 0;
   const GLsizei kPositionSize = m.renderBuffer->PositionSize();
   const GLsizei kNormalSize = m.renderBuffer->NormalSize();
   const GLsizei kUVSize = m.renderBuffer->UVSize();
+  const GLsizei kUV2Size = m.renderBuffer->UV2Size();
   const GLsizei kColorSize = m.renderBuffer->ColorSize();
   const GLsizei kBISize = m.renderBuffer->JointIdSize();
   const GLsizei kBWSize = m.renderBuffer->JointWeightSize();
@@ -107,9 +99,11 @@ Geometry::UpdateBuffers() {
     auto vertexIndex = (GLushort)(face.vertices[0] - 1);
     auto normalIndex = (GLushort)(face.normals[0] - 1);
     auto uvIndex = (GLushort)(kHasTextureCoords ? face.uvs[0] - 1 : -1);
+    auto uv2Index = (GLushort)(kHasTextureCoord2s ? face.uvs[0] - 1 : -1);
     const Vector& firstVertex = m.vertexArray->GetVertex(vertexIndex);
     const Vector& firstNormal = m.vertexArray->GetNormal(normalIndex);
     const Vector& firstUV = m.vertexArray->GetUV(uvIndex);
+    const Vector& firstUV2 = m.vertexArray->GetUV2(uv2Index);
     const Color& firstColor = m.vertexArray->GetColor(vertexIndex);
     const Vector4& firstJointId = m.vertexArray->GetJoints(vertexIndex);
     const Vector4& firstJointWeight = m.vertexArray->GetJointWeights(vertexIndex);
@@ -132,12 +126,18 @@ Geometry::UpdateBuffers() {
         VRB_GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, kBWSize, firstJointWeight.Data()));
         offset += kBWSize;
       }
+      if (kHasTextureCoord2s) {
+          VRB_GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, kUV2Size, firstUV2.Data()));
+        offset += kUV2Size;
+      }
+
       indices.push_back(count);
       count++;
 
       vertexIndex = (GLushort)(face.vertices[ix] - 1);
       normalIndex = (GLushort)(face.normals[ix] - 1);
       uvIndex = (GLushort)(kHasTextureCoords ? face.uvs[ix] - 1 : -1);
+      uv2Index = (GLushort)(kHasTextureCoord2s ? face.uvs[ix] - 1 : -1);
 
       const Vector v1 = m.vertexArray->GetVertex(vertexIndex);
       const Vector n1 = m.vertexArray->GetNormal(normalIndex);
@@ -164,12 +164,19 @@ Geometry::UpdateBuffers() {
         VRB_GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, kBWSize, bw.Data()));
         offset += kBWSize;
       }
+      if (kHasTextureCoord2s) {
+          const Vector uv1 = m.vertexArray->GetUV2(uv2Index);
+          VRB_GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, kUV2Size, uv1.Data()));
+          offset += kUV2Size;
+      }
+
       indices.push_back(count);
       count++;
 
       vertexIndex = (GLushort)(face.vertices[ix + 1] - 1);
       normalIndex = (GLushort)(face.normals[ix + 1] - 1);
       uvIndex = (GLushort)(kHasTextureCoords ? face.uvs[ix + 1] - 1 : -1);
+      uv2Index = (GLushort)(kHasTextureCoord2s ? face.uvs[ix + 1] - 1 : -1);
       const Vector v2 = m.vertexArray->GetVertex(vertexIndex);
       const Vector n2 = m.vertexArray->GetNormal(normalIndex);
       VRB_GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, kPositionSize, v2.Data()));
@@ -195,6 +202,12 @@ Geometry::UpdateBuffers() {
         VRB_GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, kBWSize, bw.Data()));
         offset += kBWSize;
       }
+      if (kHasTextureCoord2s) {
+          const Vector uv2 = m.vertexArray->GetUV2(uv2Index);
+          VRB_GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, kUV2Size, uv2.Data()));
+          offset += kUV2Size;
+      }
+
       indices.push_back(count);
       count++;
     }
@@ -290,9 +303,9 @@ Geometry::InitializeGL() {
 
   size_t definedOffset = 0;
   m.renderBuffer->DefinePosition(definedOffset);
-  definedOffset = m.renderBuffer->PositionOffset() + m.renderBuffer->PositionSize();
-  m.renderBuffer->DefineNormal(definedOffset);
-  definedOffset = m.renderBuffer->NormalOffset() + m.renderBuffer->NormalSize();
+    definedOffset = m.renderBuffer->PositionOffset() + m.renderBuffer->PositionSize();
+    m.renderBuffer->DefineNormal(definedOffset);
+    definedOffset = m.renderBuffer->NormalOffset() + m.renderBuffer->NormalSize();
   if (m.vertexArray->GetUVCount() > 0) {
     m.renderBuffer->DefineUV(definedOffset, m.vertexArray->GetUVLength());
     definedOffset = m.renderBuffer->UVOffset() + m.renderBuffer->UVSize();
@@ -307,7 +320,15 @@ Geometry::InitializeGL() {
   }
   if (m.vertexArray->GetJointWeightsCount() > 0) {
     m.renderBuffer->DefineJointWeight(definedOffset);
+    definedOffset = m.renderBuffer->JointWeightOffset() + m.renderBuffer->JointWeightSize();
   }
+
+  ///UV2
+  if (m.vertexArray->GetUV2Count() > 0) {
+    m.renderBuffer->DefineUV2(definedOffset, m.vertexArray->GetUV2Length());
+    definedOffset = m.renderBuffer->UV2Offset() + m.renderBuffer->UV2Size();
+  }
+
   GLuint vertexObjectId = 0;
   GLuint indexObjectId = 0;
   VRB_GL_CHECK(glGenBuffers(1, &vertexObjectId));

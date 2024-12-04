@@ -34,6 +34,19 @@ struct GeometryDrawable::State : public Node::State, public Drawable::State {
     }
     return renderState->HasTexture() && (renderBuffer->UVLength() > 0);
   }
+
+  bool UseTextureUV2() const {
+    if (!renderState || !renderBuffer) {
+        return false;
+    }
+    if (renderState->UVLength() != renderBuffer->UV2Length()) {
+          //VRB_WARN("RenderState UVLength(%d) != RenderBuffer UVLength(%d)", renderState->UVLength(),
+          //         renderBuffer->UVLength());
+        return false;
+    }
+    return renderState->HasTexture() && (renderBuffer->UV2Length() > 0);
+  }
+
   bool UseJoints() const {
     return renderState && renderState->GetJointsCount() > 0 && renderBuffer->JointWeightSize() > 0 &&
         renderBuffer->JointIdSize() > 0;

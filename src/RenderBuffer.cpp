@@ -33,6 +33,8 @@ struct RenderBuffer::State {
   GLsizei jointIdLength = 0;
   size_t jointWeightOffset = 0;
   GLsizei jointWeightLength = 0;
+  size_t uv2Offset = 0;
+  GLsizei uv2Length = 0;
 
   State() = default;
   ~State() = default;
@@ -47,6 +49,7 @@ struct RenderBuffer::State {
   GLsizei UVSize() const {
     return uvLength * sizeof(float);
   }
+
   GLsizei ColorSize() const {
     return colorLength* sizeof(float);
   }
@@ -59,9 +62,13 @@ struct RenderBuffer::State {
     return jointWeightLength * sizeof(float);
   }
 
+  GLsizei UV2Size() const {
+    return uv2Length * sizeof(float);
+  }
+
   GLsizei VertexSize() const {
     return PositionSize() + NormalSize() + ColorSize() + UVSize() + JointIdSize() +
-        JointWeightSize();
+        JointWeightSize() + UV2Size();
   }
 };
 
@@ -167,6 +174,27 @@ RenderBuffer::UVLength() const {
 GLsizei
 RenderBuffer::UVSize() const {
   return m.UVSize();
+}
+
+void
+RenderBuffer::DefineUV2(const size_t aOffset, const GLsizei aLength) {
+  m.uv2Offset = aOffset;
+  m.uv2Length = aLength;
+}
+
+size_t
+RenderBuffer::UV2Offset() const {
+  return m.uv2Offset;
+}
+
+GLsizei
+RenderBuffer::UV2Length() const {
+  return m.uv2Length;
+}
+
+GLsizei
+RenderBuffer::UV2Size() const {
+  return m.UV2Size();
 }
 
 void

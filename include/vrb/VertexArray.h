@@ -49,8 +49,16 @@ public:
 
   void AddNormal(const int aIndex, const Vector& aNormal);
 
+  int GetUV2Length() const;
+  void SetUV2Length(const int aLength);
+  int GetUV2Count() const;
+  const Vector& GetUV2(const int aIndex) const;
+  int AppendUV2(const Vector& aUV);
+  void SetUV2(const int aIndex, const Vector& aUV);
+
 protected:
   struct State;
+
   VertexArray(State& aState, CreationContextPtr& aContext);
   ~VertexArray() = default;
 

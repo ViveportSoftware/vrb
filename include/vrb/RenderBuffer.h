@@ -52,6 +52,11 @@ public:
   void Bind();
   void Unbind();
 
+  void DefineUV2(const size_t aOffset, const GLsizei aLength = 2);
+  size_t UV2Offset() const;
+  GLsizei UV2Size() const;
+  GLsizei UV2Length() const;
+
 protected:
   struct State;
   RenderBuffer(State& aState, CreationContextPtr& aContext);

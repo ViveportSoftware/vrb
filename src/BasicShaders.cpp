@@ -2,7 +2,7 @@ namespace vrb {
 
 static const char* sVertexShaderSource = R"SHADER(
 #version 100
-
+#pragma optimize(off)
 #define MAX_LIGHTS 2
 #define VRB_USE_TEXTURE VRB_TEXTURE_STATE
 #define VRB_UV_TYPE VRB_TEXTURE_UV_TYPE
@@ -31,6 +31,7 @@ uniform int u_lightCount;
 uniform Light u_lights[MAX_LIGHTS];
 uniform Material u_material;
 uniform vec4 u_tintColor;
+uniform float thickness;
 #if VRB_UV_TRANSFORM == 1
 uniform mat4 u_uv_transform;
 #endif
@@ -48,7 +49,9 @@ varying vec4 v_color;
 
 #ifdef VRB_USE_TEXTURE
 attribute VRB_UV_TYPE a_uv;
+attribute VRB_UV_TYPE a_uv2;
 varying VRB_UV_TYPE v_uv;
+varying VRB_UV_TYPE v_uv2;
 #endif // VRB_USE_TEXTURE
 
 #if VRB_VERTEX_COLOR == 1
@@ -96,15 +99,19 @@ void main(void) {
 #ifdef VRB_USE_TEXTURE
 #if VRB_UV_TRANSFORM == 1
   v_uv = (u_uv_transform * vec4(a_uv.xy, 0, 1)).xy;
+  v_uv2 = (u_uv_transform * vec4(a_uv2.xy, 0, 1)).xy;
 #else
-  v_uv = a_uv;
+v_uv = a_uv;
+v_uv2 = a_uv2;
 #endif // VRB_UV_TRANSFORM
 #endif // VRB_USE_TEXTURE
 
 vec4 localVertex;
+vec4 localNormal;
 
 #if VRB_JOINTS == 0
   localVertex = vec4(a_position.xyz, 1.0);
+  localNormal = vec4(a_normal, 0.0);
 #else
   mat4 localPose = mat4(0);
   localPose += u_jointMatrix[int(a_joint.x)] * a_jointWeight.x;
@@ -112,8 +119,11 @@ vec4 localVertex;
   localPose += u_jointMatrix[int(a_joint.z)] * a_jointWeight.z;
   localPose += u_jointMatrix[int(a_joint.w)] * a_jointWeight.w;
   localVertex = localPose * vec4(a_position.xyz, 1.0);
+  localNormal = localPose * vec4(a_normal, 0.0);
 #endif // VRB_JOINTS
-
+  if(thickness>0.0){
+    localVertex.xyz += localNormal.xyz * thickness;
+  }
   gl_Position = u_perspective * u_view * u_model * localVertex;
 }
 
